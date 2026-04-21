@@ -162,7 +162,7 @@ def create_excel(data):
     ws = wb.active
     ws.title = "Taglio"
 
-    headers = ['File PDF', 'Codice', 'Padre Figlio', 'Quantità', 'Larghezza', 'Lunghezza', 'Spessore', 'Peso', 'Materiale', 'Minuti', 'Secondi']
+    headers = ['File PDF', 'Codice', 'Padre Figlio', 'Quantità', 'Larghezza', 'Lunghezza', 'Spessore', 'Materiale', '', '', 'Minuti', 'Secondi', 'Peso']
     ws.append(headers)
 
     header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
@@ -185,10 +185,12 @@ def create_excel(data):
                 format_number_italian(row.get('larghezza')),
                 format_number_italian(row.get('lunghezza')),
                 format_number_italian(row.get('spessore')),
-                format_number_italian(row.get('peso')),
                 row.get('materiale'),
+                '',  # Colonna vuota 1
+                '',  # Colonna vuota 2
                 row.get('minuti'),
-                row.get('secondi')
+                row.get('secondi'),
+                format_number_italian(row.get('peso'))
             ])
 
     ws.column_dimensions['A'].width = 25
@@ -198,10 +200,12 @@ def create_excel(data):
     ws.column_dimensions['E'].width = 12
     ws.column_dimensions['F'].width = 12
     ws.column_dimensions['G'].width = 12
-    ws.column_dimensions['H'].width = 12
-    ws.column_dimensions['I'].width = 15
-    ws.column_dimensions['J'].width = 10
+    ws.column_dimensions['H'].width = 15
+    ws.column_dimensions['I'].width = 12
+    ws.column_dimensions['J'].width = 12
     ws.column_dimensions['K'].width = 10
+    ws.column_dimensions['L'].width = 10
+    ws.column_dimensions['M'].width = 12
 
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
         for cell in row:
