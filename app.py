@@ -237,9 +237,9 @@ def upload():
                 try:
                     raw_data = extract_raw_data(file, file.filename)
                     all_raw_data.extend(raw_data)
-                    print(f"✓ {file.filename}: {len(raw_data)} articoli")
+                    print(f"[OK] {file.filename}: {len(raw_data)} articoli")
                 except Exception as e:
-                    print(f"✗ {file.filename}: {str(e)}")
+                    print(f"[ERROR] {file.filename}: {str(e)}")
                     return jsonify({'error': f'Errore in {file.filename}: {str(e)}'}), 400
             else:
                 return jsonify({'error': f'{file.filename} non è un PDF valido'}), 400
