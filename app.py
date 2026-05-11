@@ -119,42 +119,41 @@ def organize_by_family(data):
 def extract_raw_data(pdf_file, filename):
     """Estrae i dati grezzi dal PDF - VERSIONE SEMPLICE E AFFIDABILE"""
     data = []
+    pattern = re.compile(
+        r'Cod\.\s+([^\s]+)\s+Q\.tà\s+(\d+)\s+.*?Materiale\s+([^\s]+)\s+'
+        r'Spessore\s+([\d,]+)\s*mm.*?Peso\s+([\d,]+)\s*Kg.*?'
+        r'Dimensioni\s+([^\s]+).*?Tempo\s+([0-9:]+)',
+        re.DOTALL
+    )
 
     with pdfplumber.open(pdf_file) as pdf:
-        full_text = ""
         for page in pdf.pages:
-            full_text += page.extract_text()
+            page_text = page.extract_text() or ""
 
-    # Cerca tutti i blocchi che iniziano con "Cod."
-    # Pattern: Cod. CODICE Q.tà QTY ... Materiale MAT Spessore SPESS ... Peso PESO ... Dimensioni DIM ... Tempo TIME
-    pattern = r'Cod\.\s+([^\s]+)\s+Q\.tà\s+(\d+)\s+.*?Materiale\s+([^\s]+)\s+Spessore\s+([\d,]+)\s*mm.*?Peso\s+([\d,]+)\s*Kg.*?Dimensioni\s+([^\s]+).*?Tempo\s+([0-9:]+)'
+            for match in pattern.finditer(page_text):
+                cod = match.group(1)
+                qty = match.group(2)
+                material = match.group(3)
+                spessore = match.group(4).replace(',', '.')
+                peso = match.group(5)
+                dimensions = match.group(6)
+                time_str = match.group(7)
 
-    matches = re.finditer(pattern, full_text, re.DOTALL)
+                width, length = parse_dimensions(dimensions)
+                minutes, seconds = parse_time(time_str)
 
-    for match in matches:
-        cod = match.group(1)
-        qty = match.group(2)
-        material = match.group(3)
-        spessore = match.group(4).replace(',', '.')
-        peso = match.group(5)
-        dimensions = match.group(6)
-        time_str = match.group(7)
-
-        width, length = parse_dimensions(dimensions)
-        minutes, seconds = parse_time(time_str)
-
-        data.append({
-            'file_pdf': filename,
-            'codice': cod,
-            'quantita': qty,
-            'larghezza': width,
-            'lunghezza': length,
-            'spessore': spessore,
-            'peso': peso,
-            'materiale': material,
-            'minuti': minutes,
-            'secondi': seconds
-        })
+                data.append({
+                    'file_pdf': filename,
+                    'codice': cod,
+                    'quantita': qty,
+                    'larghezza': width,
+                    'lunghezza': length,
+                    'spessore': spessore,
+                    'peso': peso,
+                    'materiale': material,
+                    'minuti': minutes,
+                    'secondi': seconds
+                })
 
     return data
 
