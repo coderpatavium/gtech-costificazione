@@ -317,6 +317,7 @@
         const loading = document.getElementById('loading');
         const messageEl = document.getElementById('message');
         const selectedFiles = new Set();
+        const MAX_FILE_SIZE_MB = 25;
 
         // Drag & drop
         uploadArea.addEventListener('dragover', (e) => {
@@ -345,11 +346,17 @@
 
         function handleFiles(files) {
             for (let file of files) {
-                if (file.type === 'application/pdf') {
-                    selectedFiles.add(file);
-                } else {
+                if (file.type !== 'application/pdf') {
                     showMessage(`"${file.name}" non è un PDF valido`, 'error');
+                    continue;
                 }
+
+                if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                    showMessage(`"${file.name}" supera il limite di ${MAX_FILE_SIZE_MB} MB`, 'error');
+                    continue;
+                }
+
+                selectedFiles.add(file);
             }
             updateFilesList();
         }
@@ -419,8 +426,22 @@
                     selectedFiles.clear();
                     updateFilesList();
                 } else {
-                    const error = await response.json();
-                    showMessage(`Errore: ${error.error}`, 'error');
+                    const contentType = response.headers.get('content-type') || '';
+                    let errorMessage = `Richiesta fallita (${response.status})`;
+
+                    if (contentType.includes('application/json')) {
+                        const error = await response.json();
+                        errorMessage = error.error || errorMessage;
+                    } else {
+                        const errorText = await response.text();
+                        if (response.status === 413) {
+                            errorMessage = `Il file supera il limite di ${MAX_FILE_SIZE_MB} MB`;
+                        } else if (errorText && !errorText.startsWith('<!DOCTYPE')) {
+                            errorMessage = errorText;
+                        }
+                    }
+
+                    showMessage(`Errore: ${errorMessage}`, 'error');
                 }
             } catch (error) {
                 showMessage(`Errore di connessione: ${error.message}`, 'error');

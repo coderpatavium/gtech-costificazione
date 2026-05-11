@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 import pdfplumber
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -13,6 +14,7 @@ from collections import defaultdict
 app = Flask(__name__)
 UPLOAD_FOLDER = tempfile.mkdtemp()
 ALLOWED_EXTENSIONS = {'pdf'}
+app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -217,6 +219,12 @@ def create_excel(data):
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(_error):
+    return jsonify({
+        'error': 'Il PDF supera la dimensione massima consentita di 25 MB'
+    }), 413
 
 @app.route('/api/upload', methods=['POST'])
 def upload():
