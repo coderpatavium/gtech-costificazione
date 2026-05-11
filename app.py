@@ -127,8 +127,13 @@ def extract_raw_data(pdf_file, filename):
     )
 
     with pdfplumber.open(pdf_file) as pdf:
-        for page in pdf.pages:
+        total_pages = len(pdf.pages)
+        print(f"[INFO] {filename}: apertura PDF con {total_pages} pagine")
+
+        for page_number, page in enumerate(pdf.pages, start=1):
+            print(f"[INFO] {filename}: parsing pagina {page_number}/{total_pages}")
             page_text = page.extract_text() or ""
+            page_matches = 0
 
             for match in pattern.finditer(page_text):
                 cod = match.group(1)
@@ -154,6 +159,9 @@ def extract_raw_data(pdf_file, filename):
                     'minuti': minutes,
                     'secondi': seconds
                 })
+                page_matches += 1
+
+            print(f"[INFO] {filename}: pagina {page_number}/{total_pages}, articoli trovati: {page_matches}")
 
     return data
 
@@ -228,6 +236,8 @@ def handle_file_too_large(_error):
 @app.route('/api/upload', methods=['POST'])
 def upload():
     """Riceve PDF, estrae dati, ritorna UNICO Excel"""
+    print("[INFO] Upload request ricevuta")
+
     if 'files' not in request.files:
         return jsonify({'error': 'No files provided'}), 400
 
@@ -235,6 +245,7 @@ def upload():
     if not files:
         return jsonify({'error': 'No files selected'}), 400
 
+    print(f"[INFO] Numero file ricevuti: {len(files)}")
     all_raw_data = []
 
     try:
@@ -242,6 +253,10 @@ def upload():
         for file in files:
             if file and allowed_file(file.filename):
                 try:
+                    file.seek(0, os.SEEK_END)
+                    file_size = file.tell()
+                    file.seek(0)
+                    print(f"[INFO] Avvio elaborazione {file.filename} ({file_size} bytes)")
                     raw_data = extract_raw_data(file, file.filename)
                     all_raw_data.extend(raw_data)
                     print(f"[OK] {file.filename}: {len(raw_data)} articoli")
